@@ -1538,14 +1538,14 @@ with tab8:
             
             st.markdown("---")
             
-            # Submit button
-            submit_button = st.form_submit_button(
-                "📤 Submit & Save Entry",
+            # Preview button only (no automatic save)
+            preview_button = st.form_submit_button(
+                "👁️ Preview Entry",
                 use_container_width=True,
-                type="primary"
+                type="secondary"
             )
             
-            if submit_button:
+            if preview_button:
                 # Prepare entry dictionary
                 entry = {
                     'user': current_user,
@@ -1567,27 +1567,101 @@ with tab8:
                 is_valid, errors = validate_user_entry(entry)
                 
                 if is_valid:
+                    # Store in session state for later saving
+                    st.session_state.preview_entry = entry
+                    st.session_state.show_preview = True
+                    st.success("✅ Entry is valid! Review below and save if correct.")
+                
+                else:
+                    st.error("❌ **Validation Errors - Please Fix:**")
+                    for error in errors:
+                        st.error(f"  • {error}")
+        
+        st.markdown("---")
+        
+        # ====================================================================
+        # PREVIEW SECTION (After validation)
+        # ====================================================================
+        
+        if st.session_state.get('show_preview', False) and 'preview_entry' in st.session_state:
+            st.subheader("👁️ Preview Your Entry")
+            st.markdown("Review your data before saving. Edit the form above to make changes.")
+            
+            preview_entry = st.session_state.preview_entry
+            preview_df = pd.DataFrame([preview_entry])
+            
+            # Display preview as table
+            st.dataframe(preview_df, use_container_width=True, height=150)
+            
+            # Summary statistics
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("User ID", preview_entry['user'], help="Unique identifier")
+            
+            with col2:
+                st.metric("Employee", preview_entry['employee_name'], help="Human-readable name")
+            
+            with col3:
+                st.metric("Risk Level", preview_entry['risk_level'], help="Manual risk assessment")
+            
+            with col4:
+                st.metric("Ensemble Score", f"{preview_entry['ensemble_weighted']:.3f}", help="Weighted ensemble score")
+            
+            # Detailed breakdown
+            with st.expander("📋 Detailed Field Breakdown"):
+                detail_cols = st.columns(2)
+                
+                with detail_cols[0]:
+                    st.markdown("**Behavioral Metrics**")
+                    st.write(f"• Total Emails: {preview_entry['total_emails']}")
+                    st.write(f"• Off-Hour Ratio: {preview_entry['off_hour_ratio']:.4f}")
+                    st.write(f"• Attachment Ratio: {preview_entry['attachment_ratio']:.4f}")
+                    st.write(f"• Avg Email Size: {preview_entry['avg_email_size']:.2f} bytes")
+                    st.write(f"• Avg Recipients: {preview_entry['avg_recipients']:.2f}")
+                
+                with detail_cols[1]:
+                    st.markdown("**Anomaly Scores (Z-Scores)**")
+                    st.write(f"• Isolation Forest: {preview_entry['iso_z']:.3f}")
+                    st.write(f"• LOF: {preview_entry['lof_z']:.3f}")
+                    st.write(f"• Autoencoder: {preview_entry['ae_z']:.3f}")
+                    st.write(f"• Ensemble Weighted: {preview_entry['ensemble_weighted']:.3f}")
+                    st.write(f"• Alert Flag: {preview_entry['ensemble_alert']}")
+            
+            st.markdown("---")
+            
+            # Save button (separate from form)
+            col1, col2 = st.columns([1, 3])
+            
+            with col1:
+                if st.button("💾 Save Entry", key="save_entry_btn", type="primary", use_container_width=True):
                     # Save to CSV
-                    success, message = save_manual_entry(entry)
+                    success, message = save_manual_entry(preview_entry)
                     
                     if success:
                         st.success(message)
+                        st.balloons()
                         
                         # Display saved entry
-                        st.markdown("**Saved Entry:**")
-                        entry_df = pd.DataFrame([entry])
-                        st.dataframe(entry_df, use_container_width=True)
+                        st.markdown("**✅ Successfully Saved:**")
+                        st.dataframe(pd.DataFrame([preview_entry]), use_container_width=True)
                         
                         # Show stats
                         total_entries = get_user_entries_count()
                         st.info(f"📊 Total manual entries saved: **{total_entries}**")
+                        
+                        # Clear preview
+                        st.session_state.show_preview = False
+                        st.session_state.preview_entry = None
+                        st.rerun()
                     else:
                         st.error(message)
-                
-                else:
-                    st.error("❌ **Validation Errors:**")
-                    for error in errors:
-                        st.error(f"  • {error}")
+            
+            with col2:
+                if st.button("❌ Cancel & Edit", key="cancel_btn", use_container_width=True):
+                    st.session_state.show_preview = False
+                    st.info("You can now edit the form above")
+                    st.rerun()
         
         st.markdown("---")
         

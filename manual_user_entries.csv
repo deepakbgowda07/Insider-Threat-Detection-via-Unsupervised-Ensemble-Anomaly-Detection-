@@ -1,0 +1,4 @@
+user,employee_name,total_emails,off_hour_ratio,attachment_ratio,avg_email_size,avg_recipients,iso_z,lof_z,ae_z,ensemble_weighted,risk_level,ensemble_alert,timestamp
+test_user_001,John Doe,35,0.0857,0.2571,30407.23,2.97,-0.161,-0.346,-0.561,-0.355,NORMAL,0,2026-01-22T03:45:13.336486+00:00
+test_user_001,Jane Smith,35,0.0857,0.2571,30407.23,2.97,-0.161,-0.346,-0.561,-0.355,NORMAL,0,2026-01-22T03:45:13.353869+00:00
+test_user_002,Jane Smith,40,0.15,0.3,25000.0,3.5,0.5,0.3,0.2,0.35,LOW,0,2026-01-22T03:45:13.381621+00:00
